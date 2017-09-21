@@ -3,6 +3,7 @@
 import serial
 import time
 import struct
+import sys
 
 def stop():
     while True:
@@ -10,7 +11,7 @@ def stop():
 
 if __name__ == "__main__":
 
-    uart = serial.Serial("/dev/ttyUSB2", 115200)
+    uart = serial.Serial(sys.argv[1], 115200)
     count = 0
 
     while True:
