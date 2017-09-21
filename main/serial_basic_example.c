@@ -10,6 +10,11 @@
 #define MY_TX   4
 #define MY_RX   16 
 
+#define OTHER_UART UART_NUM_1
+#define OTHER_BAUD 115200
+#define OTHER_TX   17
+#define OTHER_RX   5
+
 #define BUFSIZE 265
 #define REQSIZE 11
 #define RESPSIZE REQSIZE*3
@@ -32,6 +37,21 @@ static void uart_task(void *pvParameters)
     ESP_ERROR_CHECK(uart_param_config(uart_num, &uart_config));
     ESP_ERROR_CHECK(uart_set_pin(uart_num, MY_TX, MY_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
     ESP_ERROR_CHECK(uart_driver_install(uart_num, BUFSIZE*2, BUFSIZE*2, 0, NULL, ESP_INTR_FLAG_LOWMED));
+
+    // comment out until END BLOCK (line 53) and it works!
+    const int uart_other = OTHER_UART;
+    uart_config_t uart_config_other = {
+        .baud_rate = OTHER_BAUD,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .rx_flow_ctrl_thresh = 122,
+    };
+    ESP_ERROR_CHECK(uart_param_config(uart_other, &uart_config_other));
+    ESP_ERROR_CHECK(uart_set_pin(uart_other, OTHER_TX, OTHER_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+    ESP_ERROR_CHECK(uart_driver_install(uart_other, BUFSIZE*2, BUFSIZE*2, 0, NULL, ESP_INTR_FLAG_LOWMED));
+    // END BLOCK
 
     uint8_t *data = (uint8_t*)malloc(BUFSIZE);
     uint32_t next_count = 0;
