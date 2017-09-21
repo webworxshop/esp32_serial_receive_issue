@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -10,6 +11,8 @@
 #define MY_RX   16 
 
 #define BUFSIZE 265
+#define REQSIZE 11
+#define RESPSIZE REQSIZE*3
 
 #define STOP() while(1) { vTaskDelay(1000/portTICK_RATE_MS); }
 
@@ -34,6 +37,7 @@ static void uart_task(void *pvParameters)
     uint32_t next_count = 0;
     int len = 0;
     int index = 0;
+    uint8_t *dout = (uint8_t*)malloc(RESPSIZE);
     while(1)
     {
         len = uart_read_bytes(uart_num, data, BUFSIZE, 10/portTICK_RATE_MS);
@@ -45,10 +49,10 @@ static void uart_task(void *pvParameters)
         {
             ESP_LOGI(TAG, "RX bytes = %d", len);
         }
-        while(len >= 11)
+        while(len >= REQSIZE)
         {
             ESP_LOGI(TAG, "Data:");
-            ESP_LOG_BUFFER_HEX(TAG, data+index, 11);
+            ESP_LOG_BUFFER_HEX(TAG, data+index, REQSIZE);
 
             uint32_t count = data[index+0];
             count |= data[index+1] << 8;
@@ -62,7 +66,7 @@ static void uart_task(void *pvParameters)
             }
             next_count = count + 1;
 
-            for(int i = 4; i < 11; i++)
+            for(int i = 4; i < REQSIZE; i++)
             {
                 if(data[index+i] != i-4)
                 {
@@ -71,10 +75,17 @@ static void uart_task(void *pvParameters)
                 }
             }
 
-            len -= 11;
-            index += 11;
+            for(int i = 0; i < RESPSIZE; i+= REQSIZE)
+            {
+                memcpy(dout+i, data+index, REQSIZE);
+            }
+            uart_write_bytes(uart_num, (const char*)dout, RESPSIZE);
+
+            len -= REQSIZE;
+            index += REQSIZE;
         }
         index = 0;
+        memset(data, 0, BUFSIZE);
         
         //vTaskDelay(5/portTICK_RATE_MS);
     }
